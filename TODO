@@ -1,0 +1,16 @@
+tests for Taggable::File::Image
+Sort out class/auto attributes for Relational
+- What does Relational really model?  Is it a table or a row (object)?
+- When Tag inherits from Relational, or any other object (eg TaggableA::File::Image),
+  then Relational needs to define tablename(), etc, as class_attributes.
+
+- Allow for multiple-value tags (or repeated, as you will)
+- clean up style
+- implement search
+- tag utilities (ie post_stuff for file names)
+- authentication module
+- tag all files in a directory
+
+
+- create scripts/tag_files.pl
+- flush out TagClient/Local && Remote routines
