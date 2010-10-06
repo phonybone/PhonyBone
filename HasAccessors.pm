@@ -1,6 +1,6 @@
 package HasAccessors;
 use base qw(Exporter);
-@EXPORT_OK=qw(add_accessor add_class_accessor add_accessors add_class_accessors 
+@EXPORT_OK=qw(add_accessor add_class_accessor add_accessors add_class_accessors add_class_accessors_with_defaults
 	      add_accessors_with_defaults set_default set_defaults require_attr require_attrs);
 %EXPORT_TAGS=(all=>\@EXPORT_OK);
 
@@ -98,10 +98,10 @@ SUB
     # handle default values; first define, then set:
     $class->set_default($attr,$default) if defined $default;
     if ($default) {
-	my $init=<<"INIT";
+#	my $init=<<"INIT";
 	$class->$attr($default);
-INIT
-	eval $init;
+#INIT
+#	eval $init;
     }
 }
 
@@ -110,6 +110,15 @@ sub add_class_accessors {
     my $class=(caller)[0];
     foreach my $attr (@attrs) {
 	add_class_accessor($class,$attr,undef);
+    }
+}
+
+# fixme: needs testing
+sub add_class_accessors_with_defaults {
+    my (%attrs)=@_;
+    my $class=(caller)[0];
+    while (my ($attr,$def)=each %attrs) {
+	$class->add_class_accessor($attr,$def);
     }
 }
 
