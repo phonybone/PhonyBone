@@ -142,6 +142,21 @@ sub require_attrs {
     }
 }
 
+sub set {
+    my ($self, $attr, $value)=@_;
+    confess "unknown attr: '$attr'" unless $self->can($attr);
+#    my $stm="\$self->$attr($value)";
+#    eval $stm;
+    $self->$attr($value);
+    $value;
+}
+
+sub get {
+    my ($self, $attr)=@_;
+    confess "unknown attr: '$attr'" unless $self->can($attr);
+    $self->$attr;
+}
+
 # fixme: needs testing
 sub get_attrs {
     my ($self,@attrs)=@_;
