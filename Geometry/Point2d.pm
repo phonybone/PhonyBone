@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 package PhonyBone::Geometry::Point2d;
-use base qw(Root);
+use base qw(PhonyBone::Geometry::Root);
 use Carp;
 use Data::Dumper;
 
@@ -36,11 +36,11 @@ sub equals {
 
     my $d = $self->{x} - $p2->{x};
     $d = -$d if $d<0;
-    return 0 if ($d>Root::VERY_SMALL);
+    return 0 if ($d>PhonyBone::Geometry::Root::VERY_SMALL);
 
     $d = $self->{y} - $p2->{y};
     $d = -$d if $d<0;
-    return $d<=Root::VERY_SMALL;
+    return $d<=PhonyBone::Geometry::Root::VERY_SMALL;
 }
 
 sub plus {
