@@ -177,4 +177,7 @@ sub file_iterator {
     close FILE;
 }
 
+
+#warn __FILE__, " checking in\n";
+
 1;
