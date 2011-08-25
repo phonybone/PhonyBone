@@ -199,4 +199,6 @@ sub ver_comp {
     return 0;
 }
 
+#warn __FILE__, " checking in\n";
+
 1;

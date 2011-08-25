@@ -1,18 +1,22 @@
-#!/bin/env perl
+#!/usr/bin/env perl 
 use strict;
 use warnings;
 use Carp;
 use Data::Dumper;
+ 
 use Options;
 
 BEGIN: {
-  Options::use(qw(d h));
-    Options::useDefaults();
+  Options::use(qw(d q v h fuse=i));
+    Options::useDefaults(fuse => -1);
     Options::get();
-    die usage() if $options{h};
-    $ENV{DEBUG}=1 if $options{d};
+    die Options::usage() if $options{h};
+    $ENV{DEBUG} = 1 if $options{d};
 }
 
-MAIN: {
 
+sub main {
 }
+
+main(@ARGV);
+
