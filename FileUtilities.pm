@@ -177,4 +177,26 @@ sub file_iterator {
     close FILE;
 }
 
+########################################################################
+
+
+# compare to version numbers in form \d(\.\d)+, in a manner similar to the <=> operator.
+# returns -1 if $v1<$v2, 0 if $v1==$v2, or 1 if $v1>$v2.
+sub ver_comp {
+    my ($v1, $v2)=@_;
+    @v1=split(/\./,$v1);
+    @v2=split(/\./,$v2);
+    while (1) {
+	my $p1=shift @v1;
+	my $p2=shift @v2;
+
+	if (!defined $p1 && !defined $p2) { return 0 }
+	elsif (defined $p1 and !defined $p2) { return -1 }
+	elsif (!defined $p1 and defined $p2) { return 1 }
+	
+	if ($p2 <=> $p1) { return $p2 <=> $p1 }
+    }
+    return 0;
+}
+
 1;

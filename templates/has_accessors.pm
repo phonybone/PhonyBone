@@ -1,4 +1,10 @@
 package PackageName;
+
+use strict;
+use warnings;
+use Carp;
+use Data::Dumper;
+
 use HasAccessors qw(:all);
 use base qw(HasAccessors);
 add_accessors(qw());
