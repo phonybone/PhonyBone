@@ -52,9 +52,11 @@ sub get {
 }
 
 sub usage {
+    my @args=@_;
     my $usage = $0;
     $usage =~ s|.*/||;
-    $usage = 'usage: ' . $usage;
+    $usage = 'usage: ' . $usage . ' ';
+    $usage.=join(" ", map {"<$_>"} @args);
     my $format = "%-20s %-10s %-10s %s\n";
     $usage .= sprintf "\n$format", 'Option', 'Default', 'Required', 'Description';
     foreach my $opt (@options) {
@@ -130,6 +132,29 @@ sub setDescriptions {
     my $descHash = shift;
     %descHash = %$descHash;
 }
+
+# Process and return options that can be either a list of values OR
+# the name of a file containing a "\n"-separated list of values.
+# returns a list[ref] of values (empty list if no valid values specified)
+sub file_or_list {
+    my ($opt)=@_;
+
+    my $opt_list=$options{$opt} or return undef;
+    my @values=();
+    if (-r $opt_list->[0]) {
+	open (FILE, $opt_list->[0]) or die "Can't open ", $opt_list->[0], " for reading??? $!";
+	@values=map {chomp; $_} <FILE>;
+	close FILE;
+    } elsif (ref $opt_list eq 'ARRAY') {
+	@values=@$opt_list;
+    } else {
+	die "Don't know how to convert to list of gse's: ", Dumper($opt_list);
+    }
+
+    wantarray? @values:\@values;
+}
+
+
 
 
 # nice idea, but doesn't handle non-argument options correctly (assigns a value).
