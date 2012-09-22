@@ -18,7 +18,7 @@ use Exporter ();
 our (@EXPORT) = qw(option usage %options);
 our (@ISA) = qw(Exporter);
 
-our ($optionsHash, %options, @options, @required, %descHash);
+our ($optionsHash, %options, @options, @required, @positional, %descHash);
 
 BEGIN: {
     $optionsHash = \%options;
@@ -34,10 +34,22 @@ sub use {
     %descHash = ();
 }
 
+sub positional {
+    push @positional, @_;
+}
+
 sub get {
     GetOptions($optionsHash, @options) or die usage();
 
+    # copy @ARGV into $optionsHash as per @positional:
+    my $i=0;
+    foreach my $p (@positional) {
+	my $val=$ARGV[$i++];	# don't want to stomp @ARGV
+	$optionsHash->{$p}=$val if defined $val;
+    }
+
     # check for required options:
+    push @required, @positional;
     my @missing = ();
     foreach my $opt (@required) {
 	push @missing, $opt unless $optionsHash->{$opt};
@@ -47,14 +59,19 @@ sub get {
 	die usage();
     }
 
+
     # copy into options hash for user convenience:
     %options = %$optionsHash if ($optionsHash != \%options);
 }
 
+# build a usage string
+# pass in names of required args (or get them from @positional)
 sub usage {
+    my @args=(@positional, @_);
     my $usage = $0;
     $usage =~ s|.*/||;
-    $usage = 'usage: ' . $usage;
+    $usage = 'usage: ' . $usage . ' ';
+    $usage.=join(" ", map {"<$_>"} @args);
     my $format = "%-20s %-10s %-10s %s\n";
     $usage .= sprintf "\n$format", 'Option', 'Default', 'Required', 'Description';
     foreach my $opt (@options) {
@@ -94,11 +111,13 @@ sub useDefaults {
 }
 
 
+# return an option value by name:
 sub option {
     my $opt = shift;
     return $optionsHash->{$opt}
 }
 
+# return list of required (named, not positional) options:
 sub required {
     @required = @_;
 }
@@ -130,6 +149,29 @@ sub setDescriptions {
     my $descHash = shift;
     %descHash = %$descHash;
 }
+
+# Process and return options that can be either a list of values OR
+# the name of a file containing a "\n"-separated list of values.
+# returns a list[ref] of values (empty list if no valid values specified)
+sub file_or_list {
+    my ($opt)=@_;
+
+    my $opt_list=$options{$opt} or return undef;
+    my @values=();
+    if (-r $opt_list->[0]) {
+	open (FILE, $opt_list->[0]) or die "Can't open ", $opt_list->[0], " for reading??? $!";
+	@values=map {chomp; $_} <FILE>;
+	close FILE;
+    } elsif (ref $opt_list eq 'ARRAY') {
+	@values=@$opt_list;
+    } else {
+	die "Don't know how to convert to list of gse's: ", Dumper($opt_list);
+    }
+
+    wantarray? @values:\@values;
+}
+
+
 
 
 # nice idea, but doesn't handle non-argument options correctly (assigns a value).

@@ -4,8 +4,8 @@ package Mongoid;
 # "Mixin" class to provide functionality to MongoDB dbs.
 #
 
-
 use Moose::Role;
+
 use MongoDB;
 use MooseX::ClassAttribute;
 use PhonyBone::FileUtilities qw(warnf dief);
@@ -24,8 +24,8 @@ class_has 'connection' => (is=>'rw', isa=>'MongoDB::Connection');
 class_has 'mongo_dbs'  => (is=>'rw', isa=>'HashRef', default=>sub {{}});
 
 # Classes that use Mongoid must define these fields for themselves:
-class_has 'db_name'         => (is=>'ro', isa=>'Str');	# classes override this on their own
-class_has 'collection_name' => (is=>'ro', isa=>'Str'); # classes override this on their own
+class_has 'db_name'         => (is=>'rw', isa=>'Str');	# classes override this on their own
+class_has 'collection_name' => (is=>'rw', isa=>'Str'); # classes override this on their own
 class_has 'primary_key' => (is=>'ro', isa=>'Str', default=>'_id');
 
 # indexes example:

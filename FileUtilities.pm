@@ -11,9 +11,13 @@ use vars qw(@ISA @EXPORT_OK);
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(slurpFile spitString appendFile directory_crawl 
 		parse3 dir basename suffix filename dir_files
-		directory_iterator file_iterator);
+		directory_iterator file_iterator is_empty
+		dief warnf
+		file_lines substitute);
 
 
+# read the entire contents of a file
+# confesses on error
 sub slurpFile {
     my $filename = shift or confess "no filename";
     open (FILE, "$filename") or confess "Can't open $filename: $!";
@@ -30,6 +34,9 @@ sub slurpFile {
 
 
 
+# write a string as the contents of a file (overwrites any previous
+# contents).
+# throws exceptions as needed
 sub spitString {
     my $string = shift;
     my $filename = shift;
@@ -83,6 +90,8 @@ sub prependFile {
     1;
 }
 
+# return a list[ref] of all the files in a directory whose name matches a regex filter.
+# omit filter to get all entries.
 sub dir_files {
     my ($dir,$filter)=@_;
     opendir (DIR,$dir) or confess "Can't open '$dir': $!";
@@ -175,6 +184,89 @@ sub file_iterator {
 	last if --$fuse==0;
     }
     close FILE;
+}
+
+########################################################################
+
+# report if the file or directory is empty:
+# throw exception if $path doesn't exist or is unreadable
+# only advantage to this of "-z $filename" is that it works on directories indisciminantly.
+sub is_empty {
+    my $path=shift;
+    die "$path: no such file or directory" unless -e $path;
+    die "$path: unreadable" unless -r $path;
+
+    return  -z $path if -f $path;
+
+    local *DIR;
+    opendir(DIR, $path) or die "wtf??? Can't open '$path': $!";
+    my @files=grep !/^\.\.?$/, readdir DIR;
+    closedir DIR;
+    return scalar @files==0;
+}
+
+########################################################################
+
+
+sub dief {
+    my ($format, @args)=@_;
+    confess "no format" unless $format;
+    Carp::cluck "no args" unless @args;
+    @args=map {defined $_? $_ : ''} @args;
+    my $warning;
+    {
+	local $SIG{__WARN__}=sub { confess @_ };
+	$warning=sprintf($format, @args);
+    }
+    if ($warning!~/\n$/) {
+	my ($p,$f,$l)=caller;
+	$warning.=" at $f, line $l\n";
+    }
+    die $warning;
+}
+
+sub warnf {
+    my ($format, @args)=@_;
+    my $warning;
+    {
+	local $SIG{__WARN__}=sub {confess @_};
+	$warning=sprintf($format, @args);
+    }
+    if ($warning!~/\n$/) {
+	my ($p,$f,$l)=caller;
+	$warning.=" at $f, line $l\n";
+    }
+    warn $warning;
+}
+
+########################################################################
+
+# return the lines of an entire file as a list[ref]:
+sub file_lines {
+    my ($fn, %args)=@_;
+    local *FILE;
+    open(FILE, $fn) or die "Can't open $fn: $!\n";
+    my @lines=<FILE>;
+    if ($args{chomp}) {
+	chomp $_ for @lines;
+    }
+    close FILE;
+    wantarray? @lines:\@lines;
+}    
+
+########################################################################
+
+sub substitute {
+    my ($filename, $regex, $repl, $opts)=@_;
+    $opts||={};
+    my $lines=file_lines($filename);
+    foreach (@$lines) {
+	s/$regex/$repl/g;
+    }
+    unless ($opts->{no_backup}) {
+	rename $filename, "$filename.bak" or die "Can't rename '$filename' to '$filename.bak': $!\n";
+    }
+    spitString(join('', @$lines), $filename);
 }
 
 1;
