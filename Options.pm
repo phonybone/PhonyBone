@@ -68,6 +68,7 @@ sub get {
 # pass in names of required args (or get them from @positional)
 sub usage {
     my @args=(@positional, @_);
+
     my $usage = $0;
     $usage =~ s|.*/||;
     $usage = 'usage: ' . $usage . ' ';

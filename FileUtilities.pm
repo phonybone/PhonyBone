@@ -263,9 +263,11 @@ sub substitute {
     foreach (@$lines) {
 	s/$regex/$repl/g;
     }
+
     unless ($opts->{no_backup}) {
 	rename $filename, "$filename.bak" or die "Can't rename '$filename' to '$filename.bak': $!\n";
     }
+
     spitString(join('', @$lines), $filename);
 }
 

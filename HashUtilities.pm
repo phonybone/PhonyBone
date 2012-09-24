@@ -5,6 +5,7 @@ use warnings;
 package PhonyBone::HashUtilities;
 use base qw(Exporter);
 use vars qw(@EXPORT_OK);
+
 @EXPORT_OK = qw(walk_hash walk_list hgrep);
 
 use Carp qw(confess);
@@ -76,5 +77,6 @@ sub hgrep {
     
     wantarray? %result:\%result;
 }
+
 
 1;
