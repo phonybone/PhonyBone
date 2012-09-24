@@ -15,13 +15,11 @@ has 'age' => (is=>'rw', isa=>'Int', required=>1);
 class_has 'db_name' => (is=>'rw', isa=>'Str', default=>'persons'); 
 class_has 'collection_name' => (is=>'rw', isa=>'Str', default=>'persons'); 
 # this is stupid; we want to be able to configure these on a case-by-case
-
 class_has indexes => (is=>'rw', isa=>'ArrayRef', default=>sub{
     [
      {keys=>['firstname', 'lastname'], opts=>{unique=>1}},
     ]}
     );
-
 with 'Mongoid';
 
 sub as_str {

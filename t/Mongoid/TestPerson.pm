@@ -2,12 +2,14 @@ package TestPerson;
 use namespace::autoclean;
 
 use Moose;
-#extends 'TestCase';
+extends 'TestCase';
 use parent qw(TestCase);
 use Test::More;
 
+before qr/^test_/ => sub { shift->setup };
 
-sub test_basic : testcase {
+
+sub test_basic : Testcase {
     my ($self)=@_;
 
     my $fred=new Person(firstname=>'Fred', lastname=>'Flintstone', age=>48);
@@ -24,11 +26,10 @@ sub test_basic : testcase {
     is_deeply($records->[0], $fred, "record looks like query");
 }
 
-sub test_unique : testcase {
+sub test_unique : Testcase {
     my ($self)=@_;
     my $fred=new Person(firstname=>'Fred', lastname=>'Flintstone', age=>48);
     $fred->save;
-    warn "about to call fred->save twice\n";
     $fred->save({safe=>1});
 
     # copy n paste'd from test_basic:

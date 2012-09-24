@@ -24,6 +24,7 @@ class_has 'connection' => (is=>'rw', isa=>'MongoDB::Connection');
 class_has 'mongo_dbs'  => (is=>'rw', isa=>'HashRef', default=>sub {{}});
 
 # Classes that use Mongoid must define these fields for themselves:
+class_has 'host'            => (is=>'rw', isa=>'Str', default=>'local');
 class_has 'db_name'         => (is=>'rw', isa=>'Str');	# classes override this on their own
 class_has 'collection_name' => (is=>'rw', isa=>'Str'); # classes override this on their own
 class_has 'primary_key' => (is=>'ro', isa=>'Str', default=>'_id');
@@ -79,7 +80,10 @@ sub mongo {
     if (! defined $class->db) {
 	use Carp qw(cluck);
         # connect if haven't already done so (warning: can die)
-	$self->connection(MongoDB::Connection->new) unless $self->connection; 
+	my $host=$self->host;
+	my %connect_args;
+	$connect_args{host}=$host unless $host eq 'local';
+	$self->connection(MongoDB::Connection->new(%connect_args)) unless $self->connection; 
 
 	my $db_name=$class->db_name;
 	$class->db($self->connection->$db_name); # get db
