@@ -5,6 +5,8 @@ use Moose;
 extends 'PhonyBone::TestCase';
 use parent qw(PhonyBone::TestCase); # for method attributes (sigh...)
 use Test::More;
+use PhonyBone::FileUtilities qw(warnf);
+use Data::Dumper;
 
 before qr/^test_/ => sub { shift->setup };
 
@@ -47,10 +49,39 @@ sub test_unique : Testcase {
     is_deeply($records->[0], $fred, "record looks like query");
 
     # this should bomb:
+    my $count1=$self->class->mongo->count;
     eval {$self->class->mongo->insert(\%query, {safe=>1})};
     like($@, qr/E11000 duplicate key error index/, 'caught attempt to insert duplicate (safe mode only)');
+    my $count2=$self->class->mongo->count;
+    cmp_ok ($count1, '==', $count2, 'nothing added to db');
+
 }
 
+sub test_find_one : Testcase {
+    my ($self)=@_;
+
+    my $cursor=$self->class->mongo->find({}, {limit=>1});
+    cmp_ok ($cursor->count, '>=', 0) or do {
+	warnf "collection for %s is empty, quitting\n", $self->class;
+	return;
+    };
+    my $record=$cursor->next;
+#    warn "record is ", Dumper($record);
+    cmp_ok(ref $record, 'eq', 'HASH');
+    my $oid=$record->{_id}->{value};
+
+    my $person=$self->class->find_one($oid);
+#    warnf "%s: person is $person\n", $oid;
+    cmp_ok ($person->firstname, 'eq', $record->{firstname});
+    cmp_ok ($person->lastname, 'eq', $record->{lastname});
+    cmp_ok ($person->age, '==', $record->{age});
+
+    my $p2=$self->class->new($oid);
+    isa_ok($p2, $self->class);
+    is_deeply($person, $p2);
+}
+
+#sub test_
 
 __PACKAGE__->meta->make_immutable;
 

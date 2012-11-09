@@ -30,9 +30,9 @@ sub main {
     my $testcase=new TestPerson(class=>$class);
 
     # flow control via commenting:
-    $testcase->run_all_tests;
     $testcase->test_basic();
     $testcase->test_unique();
+    $testcase->test_find_one();
 }
 
 

@@ -62,8 +62,17 @@ around BUILDARGS => sub {
     my $orig  = shift;
     my $class = shift;
 
-    if ( @_ == 1 && !ref $_[0] && $class->can('primary_key')) {
-	return $class->$orig( $class->primary_key => $_[0] );
+    if ( @_ == 1 && !ref $_[0] ) {
+	if ($_[0]=~/^[a-f\d]{24}$/) {
+	    my $oid=MongoDB::OID->new(value => $_[0]);
+	    my $args=$class->get_record(_id=>$oid);
+	    return $class->$orig(%$args);
+	} elsif ($class->can('primary_key')) {
+	    return $class->$orig( $class->primary_key => $_[0] );
+	} else {
+	    dief "Bad arg to single-arg constructor for %s: %s",
+	    $class, $_[0];
+	}
     } else {
 	return $class->$orig(@_);
     }
