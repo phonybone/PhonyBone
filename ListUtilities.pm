@@ -316,7 +316,8 @@ sub equal_lists {
 # 
 sub in_list {
     my ($list, $elem, $equals)=@_;
-    $equals ||= sub {$_[0] eq $_[1]};
+    confess "not an ARRAY: '$list'" unless $list && ref $list eq 'ARRAY';
+    $equals ||= sub {defined $_[1] && ($_[0] eq $_[1])};
     foreach my $e (@$list) {
 	return $e if $equals->($e, $elem);
     }

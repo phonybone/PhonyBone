@@ -4,13 +4,16 @@ use strict;
 use warnings;
 use Carp;
 use Data::Dumper;
-use Options;
 
 use Test::More qw(no_plan);
 
 use FindBin qw($Bin);
 use Cwd 'abs_path';
-use lib abs_path("$Bin/../..");
+use lib abs_path("$Bin/../../lib");
+
+use Options;			
+use SomeTestcase;		# derived from PhonyBone::TestCase
+
 our $class='';
 
 BEGIN: {
@@ -23,7 +26,8 @@ BEGIN: {
 
 
 sub main {
-    require_ok($class) or BAIL_OUT("$class has compile issues, quitting");
+    my $tc=new SomeTestcase(class=>$class);
+    $tc->test_compiles();
 }
 
 main(@ARGV);

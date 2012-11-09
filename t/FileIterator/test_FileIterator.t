@@ -23,12 +23,19 @@ BEGIN: {
 
 
 sub main {
+    test_basic($class);
+    test_bad_file($class);
+}
+
+sub test_basic {
+    my ($class)=@_;
     require_ok($class) or BAIL_OUT("$class has compile issues, quitting");
     my $fi=$class->new("$Bin/sample.txt");
     isa_ok($fi, $class, "got a $class");
 
     my @lines;
-    while (my $line=$fi->next) {
+    while ($fi->has_next) {
+	my $line=$fi->next;
 	chomp $line;
 	push @lines, $line;
     }
@@ -47,6 +54,12 @@ sub main {
 	cmp_ok($line, 'eq', $expected);
     }
     
+}
+
+sub test_bad_file {
+    my ($class)=@_;
+    my $fi=eval{$class->new('imaginary.txt')};
+    cmp_ok($@, 'eq', "Can't open imaginary.txt: No such file or directory\n", "caught non-existant file");
 }
 
 main(@ARGV);

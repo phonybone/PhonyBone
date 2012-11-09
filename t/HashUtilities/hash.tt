@@ -1,0 +1,16 @@
+[% UNLESS left_tag %][% SET left_tag='<p>' %][% END %]
+[% UNLESS mid_tag %][% SET mid_tag=': ' %][% END %]
+[% UNLESS right_tag %][% SET right_tag='</p>' %][% END %]
+
+<PRE>[% dump %]</PRE>
+
+[% FOREACH k IN hash.keys().sort() %]
+  [% SET value=hash.$k %][% SET vref=$value.ref %]
+  [% left_tag %][% k %](ref=[% vref %])[% mid_tag %]
+  [% IF vref == 'ARRAY' %]<ul>[% INCLUDE list.tt list=value left_tag='&nbsp;' right_tag=',&nbsp; ' %]</ul>
+  [% ELSIF vref == 'HASH' %][% INCLUDE hash.tt hash=value %]
+  [% ELSE %]
+    [% value %]
+  [% END %]
+  [% right_tag %]
+[% END %]

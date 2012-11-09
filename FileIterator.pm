@@ -9,6 +9,11 @@ use PhonyBone::FileUtilities qw(dief);
 
 has 'filename' => (is=>'ro', isa=>'Str', required=>1);
 has 'fh' => (is=>'ro', isa=>'FileHandle', lazy=>1, builder=>'_build_fh');
+sub _build_fh {
+    my ($self)=@_;
+    my $fh=new FileHandle($self->filename, 'r') or dief "Can't open %s: $!\n", $self->filename;
+}
+
 has 'no_chomp' => (is=>'ro', isa=>'Int', default=>0);
 
 around BUILDARGS => sub {
@@ -22,15 +27,14 @@ around BUILDARGS => sub {
     }
 };
 
-sub BUILD { 
-    my $self=shift;
-    
-    $self;
+sub BUILD {
+    my ($self)=@_;
+    $self->fh;			# force builder
 }
 
-sub _build_fh {
+sub has_next {
     my ($self)=@_;
-    my $fh=new FileHandle($self->filename, 'r') or dief "Can't open %s: $!\n", $self->filename;
+    return !$self->fh->eof;
 }
 
 sub next {

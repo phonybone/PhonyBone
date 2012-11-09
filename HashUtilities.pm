@@ -13,7 +13,15 @@ use Data::Dumper;
 
 # walk_hash and walk_list recurse through a hash, calling a subref
 # for each element in the hash according to the type of the value
-# of each k-v pair:
+# of each k-v pair in %$subrefs.
+# Valid keys for %$subrefes: HASH, ARRAY, SCALAR, str
+# So if ref $hash->{$k} == 'HASH', then $subrefs->{HASH}->($hash->{$k}) is called, and so on
+# If $hash->{$k} is not a ref, then $subrefs->{str}->($hash->{$k}) is called (if it exists)
+# If $hash->{$k} is a HashRef or an ArrayRef, the appropriate function is called recursively
+# (walk_hash() or walk_list()).
+# args to callbacks (ie, $subrefs) are ($container, $index, $value)
+
+
 sub walk_hash {
     my ($hash, $subrefs)=@_;
     

@@ -1,4 +1,4 @@
-package TestCase;
+package PhonyBone::TestCase;
 require v5.6.0;			# for attributes
 use Attribute::Handlers;
 use namespace::autoclean;
@@ -7,7 +7,21 @@ use MooseX::ClassAttribute;
 use Test::More;
 
 has 'class' => (is=>'ro', isa=>'Str', required=>1);
+has 'description' => (is=>'ro', isa=>'Str', default=>'Describe what is being tested');
+
+# This has to be a class method because the attribute handler deals with it.
 class_has 'testcases' => (is=>'rw', isa=>'ArrayRef[CodeRef]', default=>sub{[]});
+
+around BUILDARGS=>sub {
+    my ($orig, $class, @args)=@_;
+    my %args;
+    if (@args==1 && ! ref $args[0]) {
+	$args{class}=$args[0];
+    } else {
+	%args=@args;
+    }
+    $class->$orig(%args);
+};
 
 # Attribute handler
 sub Testcase : ATTR(CODE) {
@@ -27,12 +41,14 @@ sub run_all_tests {
     }
 }
 
+sub test_compiles : Testcase {
+    my ($self)=@_;
+    my $class=$self->class;
+    require_ok($class) or BAIL_OUT("$class has compile issues, quitting");
+}
+
 sub setup {
     my $self=shift;
-    require_ok($self->class);
-    my $real_db_name=$self->class->db_name or confess sprintf "no db_name for class '%s'", $self->class;
-    $self->class->db_name('test_'.$real_db_name);
-    $self->class->delete_all();
 }
 
 __PACKAGE__->meta->make_immutable;

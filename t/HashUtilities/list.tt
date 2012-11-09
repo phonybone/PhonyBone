@@ -1,0 +1,11 @@
+[% UNLESS left_tag %][% SET left_tag='<li>' %][% END %]
+[% UNLESS right_tag %][% SET right_tag='</li>' %][% END %]
+
+[% FOREACH e IN list %]
+  [% SET vref=$e.ref() %]
+  [% IF vref == 'ARRAY' %]<ul>[% INCLUDE list.tt list=e %]</ul>
+  [% ELSIF vref == 'HASH' %][% INCLUDE hash.tt hash=e %]
+  [% ELSE %]
+[% left_tag %][% e %][% right_tag %]
+  [% END %]
+[% END %]

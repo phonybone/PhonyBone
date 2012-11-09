@@ -5,7 +5,7 @@ use warnings;
 package PhonyBone::StringUtilities;
 use base qw(Exporter);
 use vars qw(@EXPORT_OK);
-@EXPORT_OK = qw(trim full_split);
+@EXPORT_OK = qw(trim full_split differ_at);
 
 use Data::Dumper;
 
@@ -45,5 +45,18 @@ sub full_split {
     wantarray? @answer:\@answer;
 }
 
+# return the index at which two string begin to differ:
+sub differ_at {
+    my ($s1, $s2)=@_;
+    my $l1=length $s1;
+    my $l2=length $s2;
+    my $l=$l1<$l2? $l1 : $l2;
+    my @s1=split('', $s1);
+    my @s2=split('', $s2);
+    foreach my $i (0..$l-1) {
+	return $i if $s1[$i] ne $s2[$i];
+    }
+    return $l;
+}
 
 1;

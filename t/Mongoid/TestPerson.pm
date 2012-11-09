@@ -2,8 +2,8 @@ package TestPerson;
 use namespace::autoclean;
 
 use Moose;
-extends 'TestCase';
-use parent qw(TestCase);
+extends 'PhonyBone::TestCase';
+use parent qw(PhonyBone::TestCase); # for method attributes (sigh...)
 use Test::More;
 
 before qr/^test_/ => sub { shift->setup };

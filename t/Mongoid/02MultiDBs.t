@@ -14,6 +14,7 @@ use lib abs_path("$Bin/../..");
 our $class1='Person';
 our $class2='Motorcycle';
 
+use lib "$Bin";
 use TestPerson;
 
 BEGIN: {

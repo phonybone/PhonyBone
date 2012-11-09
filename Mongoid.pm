@@ -1,10 +1,9 @@
 package Mongoid;
+use Moose::Role;
 
 # 
-# "Mixin" class to provide functionality to MongoDB dbs.
+# Role to provide functionality to MongoDB dbs.
 #
-
-use Moose::Role;
 
 use MongoDB;
 use MooseX::ClassAttribute;
@@ -15,7 +14,6 @@ use Data::Structure::Util qw(unbless);
 
 use parent qw(Exporter);
 our @EXPORT_OK=qw(get_mongo ensure_indexes);
-
 
 has '_id'    => (isa=>'MongoDB::OID', is=>'rw');	# mongo id
 
@@ -28,6 +26,11 @@ class_has 'host'            => (is=>'rw', isa=>'Str', default=>'local');
 class_has 'db_name'         => (is=>'rw', isa=>'Str');	# classes override this on their own
 class_has 'collection_name' => (is=>'rw', isa=>'Str'); # classes override this on their own
 class_has 'primary_key' => (is=>'ro', isa=>'Str', default=>'_id');
+sub mongo_coords {
+    my $proto=shift;
+    my $class=ref $proto || $proto;
+    sprintf "%s:%s:%s", $class->host, $class->db_name, $class->collection_name;
+}
 
 # indexes example:
 # class_has indexes => (is=>'rw', isa=>'ArrayRef', default=>sub{
@@ -74,11 +77,13 @@ around BUILDARGS => sub {
 sub mongo {
     my ($self)=@_;
     my $class=ref $self || $self;
-    if (my $mongo=$self->mongo_dbs->{$class}) { return $mongo; }
+    if (my $mongo=$self->mongo_dbs->{$class}) { 
+	return $mongo; 
+    }
     confess "no db_name for $class" unless $class->db_name;
 
     if (! defined $class->db) {
-	use Carp qw(cluck);
+	
         # connect if haven't already done so (warning: can die)
 	my $host=$self->host;
 	my %connect_args;
@@ -107,23 +112,26 @@ sub mongo {
 
 sub ensure_indexes {
     my ($class, $indexes)=@_;
+    $indexes||=$class->indexes;
     my $collection=$class->mongo;
     foreach my $index_hash (@$indexes) {
-	die "$index_hash: bad index_hash" if 
+	die "bad index_hash", Dumper($index_hash) if 
 	    ref $index_hash ne 'HASH' ||
 	    ! $index_hash->{keys} ||
 	    ref $index_hash->{keys} ne 'ARRAY';
 	my $keylist=$index_hash->{keys} or confess "no keys";
-	my %keys;
-	@keys{@$keylist}=@$keylist;
+	my %keys=map {($_,1)} @$keylist;
 	my $opts=$index_hash->{opts} or confess " no opts";
 	$collection->ensure_index(\%keys, $opts);
+	warn "indexed $class using ", Dumper(\%keys), "opts: ", Dumper($opts) if $ENV{DEBUG};
     }
 }
 
 sub get_mongo {
     my ($db_name, $collection_name)=@_;
 
+    use Carp qw(cluck);
+    cluck sprintf "looking for connection for class '%s'", __PACKAGE__;
     my $connection=__PACKAGE__->connection;
     unless ($connection) {    
 	$connection=MongoDB::Connection->new;
@@ -152,13 +160,19 @@ sub find {
 }
 
 sub find_one {
-    my ($self, $id)=@_;
-    $id ||= $self->primary_key or confess "no primary key";
-    confess "nyi";
+    my ($self, $_id)=@_;
+    my $oid=new MongoDB::OID(value=>$_id);
+    my $cursor=$self->mongo->find({_id=>$oid});
+    dief "No record for _id=$_id in %s", $self->mongo_coords 
+	unless $cursor && $cursor->has_next;
+    my $record=$cursor->next;
+    my $class=ref $self||$self;
+    $class->new(%$record);
 }
 
 sub save {
     my ($self, $options)=@_;
+    $options||={};
     my $rc=$self->mongo->save($self, $options);
     $self->_id($rc) if ref $rc eq 'MongoDB::OID';
     $self;
@@ -239,3 +253,14 @@ sub record {
 
 
 1;
+
+__END__
+
+    # Check for a running mongod instance.  We may need to move this away from
+    # compile-time code...
+    eval {GEO::Series->mongo};
+    if ($@) {
+	$@=~s| at /.*||ms;
+	die "Unable to connect to mongo db.  Verify mongod is running (err=$@)\n\n";
+    }
+
