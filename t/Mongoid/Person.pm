@@ -11,6 +11,7 @@ use MooseX::ClassAttribute;
 has 'firstname' => (is=>'ro', isa=>'Str', required=>1);
 has 'lastname' => (is=>'ro', isa=>'Str', required=>1);
 has 'age' => (is=>'rw', isa=>'Int', required=>1);
+has 'ts' => (is=>'rw', isa=>'Int', default=>sub { time });
 
 class_has 'db_name' => (is=>'rw', isa=>'Str', default=>'persons'); 
 class_has 'collection_name' => (is=>'rw', isa=>'Str', default=>'persons'); 

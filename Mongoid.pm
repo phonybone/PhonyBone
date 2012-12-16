@@ -47,9 +47,10 @@ sub BUILD {
     return unless (defined $connection);
 
     my $primary_key=$self->primary_key or return $self; # primary_key not set for some reason
-    my $primary_id=$self->{$primary_key};
+    my $primary_id=$self->{$primary_key} or return $self;
     return $self unless defined $primary_id;
-    $primary_id=int($primary_id) if $primary_id =~ /^-?\d+$/;
+    warn "primary_id is $primary_id";
+    $primary_id=int($primary_id) if $primary_id =~ /^-?\d+$/; # convert a digit string to an int
 
     my $class=ref $self;
     my $record=$self->get_record($primary_key => $primary_id);
@@ -158,6 +159,7 @@ sub get_record {
     $self->mongo->find_one($query);
 }
 
+# Find and return an array[ref] of objects (calls constructor for every record)
 sub find {
     my ($class, $query, $opts)=@_;
     $class = ref $class || $class; # get class if object supplied
@@ -168,6 +170,7 @@ sub find {
     wantarray? @objs:\@objs;
 }
 
+# find one record via $oid: ($oid should be $self->_id->{value})
 sub find_one {
     my ($self, $_id)=@_;
     my $oid=new MongoDB::OID(value=>$_id);
@@ -179,6 +182,14 @@ sub find_one {
     $class->new(%$record);
 }
 
+# return the ts of the record extracted from the oid:
+# return undef if unable to extract a ts
+sub oid_ts {
+    my ($self)=@_;
+    my $oid=$self->_id or return undef;
+    $oid->get_time;
+}
+
 sub save {
     my ($self, $options)=@_;
     $options||={};
@@ -188,23 +199,18 @@ sub save {
 }
 sub insert { save(@_) }
 
-# update a record, using _id.
-# Omits keys starting with '_'
-# $opts is a hashref; accepted keys are 'upsert', 'multiple'.
+# Update records in the objects/classes mongo table
+# Not generally applicable for single objects; use 'save' for that
 sub update {
-    my ($self, $opts)=@_;
-    my $record={};
-    while (my ($k,$v)=each %$self) { # copy fields to new record, ...
-	$record->{$k}=$v unless $k=~/^_/; # ...skipping "_keys"
+    my ($self, $query, $updates, $opts)=@_;
+    confess "bad/missing query" unless ref $query eq 'HASH';
+    unless (%$query) {
+	confess "'$self': not a ref or can't call '_id'" unless ref $self && $self->can('_id');
+	$query={_id=>$self->_id}; 
     }
+    confess "bad/missing updates" unless ref $updates eq 'HASH';
     $opts||={}; $opts->{safe}=1;
-    my $geo_id=$self->geo_id;
-    my $report=$self->mongo->update({geo_id=>$geo_id}, $record, $opts);
-    warn "update $geo_id: nothing updated (_id not set, nor upsert)\n" if $report->{n}==0;
-#    warn "update: ",Dumper($report);
-    my $_id=$report->{upserted};
-    $self->_id($_id) if ref $_id eq 'MongoDB::OID'; # only works because geo_id is like a primary key
-    $self;
+    $self->mongo->update($query, $updates, $opts);
 }
 
 # Delete self, via _id:
@@ -238,8 +244,10 @@ sub remove_dups {
 }
 
 
-# Assign the contents of a hash to a geo object.  Extract each field of hash for which
-# a geo accessor exists.
+# Assign the contents of a hash to a Mongoid object.  Extract each 
+# field of hash for which a geo accessor exists.
+# overwrites existing key/values, except for keys starting 
+# with '_', but will overwrite '_id'.
 # Returns $self
 sub hash_assign {
     my ($self, @args)=@_;
@@ -259,6 +267,8 @@ sub record {
     
     wantarray? %record:\%record;
 }
+
+
 
 
 1;

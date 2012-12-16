@@ -81,7 +81,41 @@ sub test_find_one : Testcase {
     is_deeply($person, $p2);
 }
 
-#sub test_
+sub test_update : Testcase {
+    my ($self)=@_;
+#    warnf "using %s\n", $self->class->mongo_coords;
+    my $person_rec=$self->class->mongo->find()->next || 
+        { firstname=>'Fred', lastname=>'Flintstone', age=>23, };
+    my $person=new Person(%$person_rec)->save;
+    isa_ok($person->_id, 'MongoDB::OID');
+
+    # update $person's ts:
+    sleep 1;
+    my $ts=time;
+    my $info=$person->update({_id=>$person->_id}, {'$set'=>{ts=>$ts}});
+
+    my $oid=$person->_id->{value};
+    my $p2=$self->class->find_one($oid);
+    cmp_ok($p2->ts, '==', $ts, "got ts $ts");
+
+    # test other form of update (empty query):
+    sleep 1;
+    $ts=time;
+    $person->ts($ts);
+    $info=$person->update({}, {'$set'=>{ts=>$ts}});
+    cmp_ok($info->{n}, '==', 1, 'updated 1 thing');
+    $p2=$self->class->find_one($oid);
+    cmp_ok($p2->ts, '==', $ts, "got ts $ts");
+    
+}
+
+sub test_oid_ts : Testcase {
+    my ($self)=@_;
+    my @persons=$self->class->find;
+    foreach my $peep (@persons) {
+	printf "$peep: ts is %d\n", $peep->oid_ts;
+    }
+}
 
 __PACKAGE__->meta->make_immutable;
 
